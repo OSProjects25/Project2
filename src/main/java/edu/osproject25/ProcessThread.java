@@ -1,8 +1,10 @@
 package edu.osproject25;
 
-import java.lang.Thread;
+import edu.osproject25.sync.BoundedBuffer;
+
 /**
  * Model representing a process in the scheduling simulation.
+ * Acts as a Consumer in the Producer-Consumer pattern.
  * Includes identifiers, input parameters (arrival, burst, priority), and computed fields
  * (waiting, turnaround, completion times).
  */
@@ -14,6 +16,7 @@ public class ProcessThread extends Thread {
     private int waitingTime;
     private int turnaroundTime;
     private int completionTime;
+    private BoundedBuffer buffer;
     
     public ProcessThread(int pid, int arrivalTime, int burstTime, int processPriority) {
         this.pid = pid;
@@ -24,14 +27,35 @@ public class ProcessThread extends Thread {
         this.turnaroundTime = 0;
         this.completionTime = 0;
     }
+    
+    public void setBuffer(BoundedBuffer buffer) {
+        this.buffer = buffer;
+    }
 
+    /**
+     * Thread execution: simulates process arrival and consumes items from buffer.
+     * Number of items consumed equals the process burst time.
+     */
     @Override
     public void run() {
-        System.out.println("Process " + pid + " started.");
         try {
-            Thread.sleep(burstTime * 1000);
-        } catch (InterruptedException e) {}
-        System.out.println("Process " + pid + " finished.");
+            // Simulate arrival time delay before process starts
+            if (arrivalTime > 0) {
+                Thread.sleep(arrivalTime * 100);
+            }
+            
+            System.out.println("[Process-" + pid + "] Started (Priority: " + processPriority + ")");
+            
+            // Consume items from buffer based on burst time
+            for (int i = 0; i < burstTime; i++) {
+                int item = buffer.consume("Process-" + pid);
+                Thread.sleep(100); // Processing delay
+            }
+            
+            System.out.println("[Process-" + pid + "] Finished.");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     public int getPid() {
